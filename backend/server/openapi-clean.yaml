@@ -1,0 +1,417 @@
+openapi: 3.0.3
+info:
+  title: ContractSecure API
+  version: "1.0.0-mvp"
+  description: |
+    Secure digital contract platform: create contracts, invite signers, verify identity via OTP,
+    capture consent + GPS, embed signatures, finalize tamper-proof PDF with SHA-256.
+  contact:
+    name: API Support
+    email: support@contractsecure.example.com
+  license:
+    name: Proprietary
+    url: https://contractsecure.example.com/terms
+
+servers:
+  - url: http://localhost:3001
+    description: Local development
+  - url: https://api.contractsecure.example.com
+    description: Production
+
+tags:
+  - name: Contracts
+  - name: Signers
+  - name: Invites
+  - name: OTP
+  - name: Signing
+  - name: Files
+
+paths:
+  # Contracts
+  /contracts:
+    post:
+      tags: [Contracts]
+      summary: Create a new contract
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, file]
+              properties:
+                title: { type: string, example: "Employment Agreement" }
+                file: { type: string, format: binary }
+      responses:
+        '201':
+          description: Contract created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /contracts/{contractId}:
+    get:
+      tags: [Contracts]
+      summary: Get contract details
+      parameters:
+        - $ref: '#/components/parameters/ContractId'
+      responses:
+        '200':
+          description: Contract details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Signers
+  /contracts/{contractId}/signers:
+    post:
+      tags: [Signers]
+      summary: Add a signer to a contract
+      parameters:
+        - $ref: '#/components/parameters/ContractId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignerRequest'
+      responses:
+        '201':
+          description: Signer added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Signer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Invites
+  /contracts/{contractId}/invite:
+    post:
+      tags: [Invites]
+      summary: Send invitation to sign the contract
+      parameters:
+        - $ref: '#/components/parameters/ContractId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteRequest'
+      responses:
+        '200':
+          description: Invitation sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # OTP
+  /otp/start:
+    post:
+      tags: [OTP]
+      summary: Start OTP verification process
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpStartRequest'
+      responses:
+        '200':
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  message: { type: string, example: "OTP sent to email" }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /otp/verify:
+    post:
+      tags: [OTP]
+      summary: Verify OTP code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerifyRequest'
+      responses:
+        '200':
+          description: OTP verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  token: { type: string, example: "jwt.token.here" }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # Signing
+  /sign/{token}:
+    get:
+      tags: [Signing]
+      summary: Get contract for signing
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Contract retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Signing]
+      summary: Sign the contract
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignRequest'
+      responses:
+        '200':
+          description: Contract signed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # Files
+  /contracts/{contractId}/download:
+    get:
+      tags: [Files]
+      summary: Download the final signed contract
+      parameters:
+        - $ref: '#/components/parameters/ContractId'
+      responses:
+        '200':
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  parameters:
+    ContractId:
+      name: contractId
+      in: path
+      required: true
+      schema: { type: string }
+      description: Contract ID
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Contract:
+      type: object
+      properties:
+        id: { type: string, example: "contract_12345" }
+        title: { type: string, example: "Employment Agreement" }
+        status: { $ref: "#/components/schemas/ContractStatus" }
+        created_at: { type: string, format: date-time, nullable: true }
+        base_pdf_path: { type: string, nullable: true }
+        final_pdf_path: { type: string, nullable: true }
+        pdf_sha256: { type: string, nullable: true }
+
+    ContractStatus:
+      type: string
+      enum: [draft, pending, partially_signed, executed, void, expired, declined]
+      description: |
+        - draft: Contract is being prepared
+        - pending: Waiting for signatures
+        - partially_signed: Some but not all signatures collected
+        - executed: Fully signed and completed
+        - void: Cancelled/voided
+        - expired: Signing period expired
+
+    Signer:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string, format: email, nullable: true }
+        phone: { type: string, nullable: true }
+        sequence: { type: integer }
+        otp_verified_at: { type: string, format: date-time, nullable: true }
+        signed_at: { type: string, format: date-time, nullable: true }
+        signature_path: { type: string, nullable: true }
+        gps_lat: { type: number, nullable: true }
+        gps_lng: { type: number, nullable: true }
+        gps_accuracy: { type: number, nullable: true }
+        consented: { type: integer, nullable: true, description: "0/1" }
+        ip_address: { type: string, nullable: true }
+        ua: { type: string, nullable: true }
+
+    SignerRequest:
+      type: object
+      required: [name, email]
+      properties:
+        name: { type: string, example: "John Doe" }
+        email: { type: string, format: email, example: "john@example.com" }
+        phone: { type: string, nullable: true, example: "+1234567890" }
+
+    InviteRequest:
+      type: object
+      required: [signerId]
+      properties:
+        signerId: { type: string, example: "signer_12345" }
+        message: { type: string, example: "Please sign this document" }
+
+    InviteResponse:
+      type: object
+      properties:
+        ok: { type: boolean, example: true }
+        link: { type: string, example: "http://localhost:5173/sign/eyJ..." }
+        token: { type: string, example: "<jwt>" }
+
+    OtpStartRequest:
+      type: object
+      required: [contractId, signerId, email]
+      properties:
+        contractId: { type: 'string' }
+        signerId: { type: 'string' }
+        email: { type: 'string', format: 'email' }
+
+    OtpVerifyRequest:
+      type: object
+      required: [contractId, signerId, code]
+      properties:
+        contractId: { type: 'string' }
+        signerId: { type: 'string' }
+        code: { type: 'string', example: "123456" }
+
+    SignRequest:
+      type: object
+      required: [signatureDataUrl, consented]
+      properties:
+        signatureDataUrl: { type: 'string', description: "data:image/png;base64,..." }
+        gps:
+          type: object
+          nullable: true
+          properties:
+            lat: { type: 'number' }
+            lng: { type: 'number' }
+            accuracy: { type: 'number', nullable: true }
+        consented: { type: 'boolean' }
+        ua: { type: 'string', description: "User agent string", nullable: true }
+
+    FinalizeResponse:
+      type: object
+      properties:
+        ok: { type: 'boolean', example: true }
+        download: { type: 'string', example: "/api/contracts/contract_12345/download" }
+        downloadUrl: { type: 'string', example: "/api/contracts/contract_12345/download" }
+        sha256: { type: 'string', example: "e3b0c44298fc1c149..." }
+
+    Error:
+      type: object
+      properties:
+        ok: { type: boolean, example: false }
+        error: { type: string, example: "not_found" }
+        message: { type: string, example: "The requested resource was not found" }
+        details: 
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string, example: "email" }
+              message: { type: string, example: "Invalid email format" }
+        requestId: { type: string, format: uuid, example: "550e8400-e29b-41d4-a716-446655440000" }
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ServerError:
+      description: Server error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+x-future:
+  webhooks:
+    contract.finalized:
+      post:
+        summary: Webhook (future) — contract finalized
+        description: Emitted when a contract transitions to executed.
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contractId: { type: string }
+                  sha256: { type: string }
+                  finalizedAt: { type: string, format: date-time }
+  endpoints:
+    - /api/admin/audit
+    - /api/auth/login
+    - /api/auth/refresh
+    - /webhooks
+    - /webhooks/{webhookId}
+    - /audit-logs

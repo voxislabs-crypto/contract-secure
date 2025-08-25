@@ -1,0 +1,29 @@
+{
+  "name": "contractsecure-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "prisma:studio": "prisma studio",
+    "prisma:gen": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.14.0",
+    "@vonage/server-sdk": "^3.24.1",
+    "@vonage/verify2": "^1.16.2",
+    "next": "14.1.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "prisma": "^5.14.0",
+    "typescript": "^5.4.5"
+  }
+}
