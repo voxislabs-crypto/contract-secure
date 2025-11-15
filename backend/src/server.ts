@@ -27,7 +27,7 @@ function getLocalIpAddress(): string {
       }
     }
   }
-  
+
   // Return the first available IP address
   const firstInterface = Object.keys(results)[0];
   return results[firstInterface]?.[0] || 'localhost';
@@ -81,7 +81,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       status: res.statusCode,
       durationMs: duration,
       ip: req.ip,
-      userAgent: req.get('user-agent')
+      userAgent: req.get('user-agent'),
     };
     logger.info(JSON.stringify(logData));
   });
@@ -106,7 +106,7 @@ async function setupOpenApiValidator() {
   try {
     // Import the OpenAPI validator
     const OpenApiValidator = await import('express-openapi-validator');
-    
+
     // Apply the middleware to the app
     app.use(
       OpenApiValidator.middleware({
@@ -121,14 +121,14 @@ async function setupOpenApiValidator() {
         },
       })
     );
-    
+
     logger.info('OpenAPI validator middleware applied');
     return true;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Failed to initialize OpenAPI validator:', { 
+    logger.error('Failed to initialize OpenAPI validator:', {
       error: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
     throw error;
   }
@@ -162,10 +162,12 @@ app.use(requestIdMiddleware);
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: FRONTEND_URL,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: FRONTEND_URL,
+    credentials: true,
+  })
+);
 
 // Rate limiting
 const apiLimiter = rateLimit({
@@ -189,7 +191,7 @@ const setupSwaggerUI = async () => {
   try {
     const swaggerUi = await import('swagger-ui-express');
     const swaggerJsdoc = await import('swagger-jsdoc');
-    
+
     const options = {
       definition: {
         openapi: '3.0.0',
@@ -207,27 +209,31 @@ const setupSwaggerUI = async () => {
       },
       apis: ['./src/routes/*.ts'], // Path to the API docs
     };
-    
+
     const specs = swaggerJsdoc.default(options);
-    
+
     // Setup Swagger UI route
-    app.use('/api-docs', 
+    app.use(
+      '/api-docs',
       swaggerUi.serve,
       swaggerUi.setup(specs, {
         explorer: true,
         customSiteTitle: 'ContractSecure API Documentation',
       })
     );
-    
+
     // Serve OpenAPI spec
     app.get('/openapi.json', (req, res) => {
       res.setHeader('Content-Type', 'application/json');
       res.json(specs);
     });
-    
+
     logger.info('Swagger UI is available at /api-docs');
   } catch (error) {
-    logger.error('Failed to set up Swagger UI:', error);
+    logger.error('Failed to set up Swagger UI', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
   }
 };
 
@@ -257,7 +263,7 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Call setup functions
-setupSwaggerUI().catch(error => {
+setupSwaggerUI().catch((error) => {
   logger.error('Failed to set up Swagger UI:', error);
 });
 
@@ -276,9 +282,11 @@ const startServer = async () => {
     server.listen(port, '0.0.0.0', () => {
       logger.info(`Server running in ${NODE_ENV} mode on port ${port}`);
       logger.info(`API Documentation available at http://localhost:${port}/api-docs`);
-      logger.info(`API Documentation also available at http://${getLocalIpAddress()}:${port}/api-docs`);
+      logger.info(
+        `API Documentation also available at http://${getLocalIpAddress()}:${port}/api-docs`
+      );
     });
-    
+
     // Handle server errors
     server.on('error', (error: NodeJS.ErrnoException) => {
       if (error.syscall !== 'listen') {

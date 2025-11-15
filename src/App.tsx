@@ -1,32 +1,55 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
-import { ThemeProvider } from '@/context/ThemeContext';
-import { AuthProvider } from '@/context/AuthContext';
-import { HomePage } from '@/pages/HomePage';
-import { SignPage } from '@/pages/SignPage';
-import { NotFoundPage } from '@/pages/NotFoundPage';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { ContractViewPage } from '@/pages/ContractViewPage';
-
+import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
+import { Toaster } from './components/ui/toaster';
+import Layout from './components/Layout';
+import HomePage from './pages/Home';
+import ContractsPage from './pages/Contracts';
+import CreateContractPage from './pages/CreateContract';
+import ContractDetailPage from './pages/ContractDetail';
+import LoginPage from './pages/Login';
+import NotFoundPage from './pages/NotFound';
+import ProtectedRoute from './components/ProtectedRoute';
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <Router>
-          <div className="min-h-screen bg-background">
+          <Layout>
             <Routes>
+              <Route path="/login" element={<LoginPage />} />
               <Route path="/" element={<HomePage />} />
-              <Route path="/sign/:contractId/:signerId" element={<SignPage />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/contracts/:id" element={<ContractViewPage />} />
+              <Route
+                path="/contracts"
+                element={
+                  <ProtectedRoute>
+                    <ContractsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/contracts/new"
+                element={
+                  <ProtectedRoute>
+                    <CreateContractPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/contracts/:id"
+                element={
+                  <ProtectedRoute>
+                    <ContractDetailPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
             <Toaster />
-          </div>
+          </Layout>
         </Router>
       </AuthProvider>
     </ThemeProvider>
   );
 }
-
 export default App;

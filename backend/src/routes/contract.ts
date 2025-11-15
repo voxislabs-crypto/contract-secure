@@ -1,8 +1,8 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import { 
+import {
   getContract,
   createContract,
-  finalizeContract 
+  finalizeContract,
 } from '../controllers/contractController.js';
 import { ApiError } from '../utils/apiError.js';
 import { err } from '../utils/respond.js';
@@ -15,27 +15,20 @@ const router = Router();
 // Middleware to validate contractId
 const validateContractId = (req: Request, res: Response, next: NextFunction) => {
   const { contractId } = req.params;
-  
+
   if (!contractId) {
     return err(res, 400, 'bad_request', 'Contract ID is required', req.id!);
   }
-  
+
   next();
 };
 
 // Error handling middleware
-const errorHandler = (error: unknown, req: Request, res: Response, next: NextFunction) => {
+const errorHandler = (error: unknown, req: Request, res: Response, _next: NextFunction) => {
   if (error instanceof ApiError) {
-    return err(
-      res,
-      error.status,
-      error.code || 'api_error',
-      error.message,
-      req.id!,
-      error.details
-    );
+    return err(res, error.status, error.code || 'api_error', error.message, req.id!, error.details);
   }
-  
+
   console.error('Unhandled error:', error);
   return err(res, 500, 'server_error', 'Internal server error', req.id!);
 };
@@ -147,13 +140,11 @@ router.post('/:contractId/finalize', validateContractId, async (req: Request, re
 
 export default router;
 
-// Schema components for OpenAPI
-declare module '#/components/schemas' {
-  interface Contract {
-    id: string;
-    title: string;
-    status: 'draft' | 'pending' | 'signed' | 'finalized';
-    createdAt: string;
-    updatedAt?: string;
-  }
+// Contract interface for TypeScript
+export interface Contract {
+  id: string;
+  title: string;
+  status: 'draft' | 'pending' | 'signed' | 'finalized';
+  createdAt: string;
+  updatedAt?: string;
 }
