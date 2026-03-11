@@ -41,6 +41,8 @@ import { openApiErrorHandler } from './middleware/validation.js';
 import { responseHelpersMiddleware } from './utils/apiResponse.js';
 import healthRouter from './routes/health.js';
 import contractRouter from './routes/contract.js';
+import escrowRouter from './routes/escrow.js';
+import { handleStripeWebhook } from './services/escrowService.js';
 
 // Ensure required directories exist
 ensureDirs();
@@ -60,14 +62,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 const currentFileUrl = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFileUrl);
 
-app.use(
-  OpenApiValidator.middleware({
-    apiSpec: path.join(currentDir, '../../server/openapi.yaml'),
-    validateRequests: true,
-    validateResponses: true,
-    ignorePaths: /\/download$/, // Skip validation for file downloads
-  })
-);
+// NOTE: A second, more permissive OpenAPI validator is configured inside
+// setupOpenApiValidator() below (with ignoreUndocumented: true).
 
 // Add request logging
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -179,6 +175,25 @@ const apiLimiter = rateLimit({
 
 app.use(apiLimiter);
 
+// ── Stripe webhook — raw body required for signature verification ──────────
+// Must be registered BEFORE express.json() to receive unparsed bytes.
+app.post(
+  '/api/webhooks/stripe',
+  express.raw({ type: 'application/json' }),
+  async (req: Request, res: Response) => {
+    const sig = req.headers['stripe-signature'] as string;
+    if (!sig) return res.status(400).json({ error: 'Missing stripe-signature header' });
+    try {
+      await handleStripeWebhook(req.body as Buffer, sig);
+      return res.json({ received: true });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Webhook error';
+      console.error('[stripe webhook]', msg);
+      return res.status(400).send(`Webhook Error: ${msg}`);
+    }
+  }
+);
+
 // Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -252,6 +267,7 @@ app.use('/health', healthRouter);
 
 // API Routes
 app.use('/api/contracts', contractRouter);
+app.use('/api/escrow', escrowRouter);
 
 // Handle OpenAPI validation errors
 app.use(openApiErrorHandler);

@@ -10,6 +10,8 @@ import ContractDetailPage from './pages/ContractDetail';
 import LoginPage from './pages/Login';
 import NotFoundPage from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
+import CreateEscrowDeal from './pages/CreateEscrowDeal';
+import EscrowDealDetail from './pages/EscrowDealDetail';
 function App() {
   return (
     <ThemeProvider>
@@ -43,6 +45,8 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/escrow/new" element={<CreateEscrowDeal />} />
+              <Route path="/escrow/:id" element={<EscrowDealDetail />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
             <Toaster />

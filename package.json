@@ -5,13 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "server": "cd server && npm run dev",
-    "start:server": "cd server && npm start",
+    "server": "cd backend && npm run dev",
+    "start:server": "cd backend && npm start",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "cd server && npm start"
+    "start": "cd backend && npm start"
   },
   "dependencies": {
     "@prisma/client": "^6.14.0",

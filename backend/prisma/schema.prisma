@@ -4,36 +4,70 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  // SQLite for local dev. Set DATABASE_URL="postgresql://..." for production.
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model Contract {
-  id           String    @id @default(cuid())
-  title        String
-  pdfUrl       String?   // where the final stamped PDF will live
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  signers      Signer[]
-  auditLogs    AuditLog[]
+  id        String   @id @default(cuid())
+  title     String
+  pdfUrl    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  signers   Signer[]
+  auditLogs AuditLog[]
+
+  // ── Escrow fields ──────────────────────────────────────────────────────────
+  isEscrow                Boolean   @default(false)  @map("is_escrow")
+  itemDescription         String?                    @map("item_description")
+  price                   Float?
+  deliveryDeadline        DateTime?                  @map("delivery_deadline")
+  // draft | signed | paid_held | shipped | completed | disputed | refunded
+  paymentStatus           String    @default("draft") @map("payment_status")
+  stripePaymentIntentId   String?                    @map("stripe_payment_intent_id")
+  stripeCheckoutSessionId String?   @unique           @map("stripe_checkout_session_id")
+  trackingNumber          String?                    @map("tracking_number")
+  shortLink               String?   @unique           @map("short_link")
+  escrowFeePercent        Float     @default(3.0)    @map("escrow_fee_percent")
+  itemPhotoUrl            String?                    @map("item_photo_url")
+  sellerName              String?                    @map("seller_name")
+  sellerEmail             String?                    @map("seller_email")
+  buyerName               String?                    @map("buyer_name")
+  buyerEmail              String?                    @map("buyer_email")
+
+  @@map("contracts")
 }
 
 model Signer {
   id          String    @id @default(cuid())
-  contractId  String
-  phone       String
+  contractId  String    @map("contract_id")
+  phone       String?
   email       String?
-  otpVerified Boolean   @default(false)
-  signature   String?   // base64 path or storage key
-  createdAt   DateTime  @default(now())
+  name        String?
+  role        String?   // buyer | seller
+  otpVerified Boolean   @default(false) @map("otp_verified")
+  signature   String?
+  signedAt    DateTime? @map("signed_at")
+  gpsLat      Float?    @map("gps_lat")
+  gpsLng      Float?    @map("gps_lng")
+  gpsAccuracy Float?    @map("gps_accuracy")
+  ipAddress   String?   @map("ip_address")
+  userAgent   String?   @map("user_agent")
+  consentAt   DateTime? @map("consent_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
   contract    Contract  @relation(fields: [contractId], references: [id])
+
+  @@map("signers")
 }
 
 model AuditLog {
-  id          String    @id @default(cuid())
-  contractId  String
-  event       String
-  meta        Json?
-  createdAt   DateTime  @default(now())
-  contract    Contract  @relation(fields: [contractId], references: [id])
+  id         String   @id @default(cuid())
+  contractId String   @map("contract_id")
+  event      String
+  meta       String?  // JSON stored as TEXT (SQLite-compatible)
+  createdAt  DateTime @default(now()) @map("created_at")
+  contract   Contract @relation(fields: [contractId], references: [id])
+
+  @@map("audit_logs")
 }
