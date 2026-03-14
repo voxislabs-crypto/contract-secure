@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import {
   getEscrowDeal,
+  createSellerConnectLink,
   startPayment,
   markShipped,
   confirmReceipt,
@@ -101,6 +102,7 @@ export default function EscrowDealDetail() {
   const [copied, setCopied] = useState(false);
 
   const paymentResult = searchParams.get('payment'); // 'success' | 'canceled'
+  const onboardingResult = searchParams.get('onboarding'); // 'done' | 'refresh'
 
   const refresh = async () => {
     if (!id) return;
@@ -133,6 +135,12 @@ export default function EscrowDealDetail() {
     run(async () => {
       const { checkoutUrl } = await startPayment(id!);
       window.location.href = checkoutUrl;
+    });
+
+  const handleSellerConnect = () =>
+    run(async () => {
+      const { onboardingUrl } = await createSellerConnectLink(id!);
+      window.location.href = onboardingUrl;
     });
 
   const handleShip = () =>
@@ -181,6 +189,7 @@ export default function EscrowDealDetail() {
   const status = deal.paymentStatus;
   const fee = ((deal.price ?? 0) * deal.escrowFeePercent) / 100;
   const netSeller = (deal.price ?? 0) - fee;
+  const sellerPayoutReady = !!deal.sellerPayoutsEnabled;
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-6">
@@ -197,6 +206,16 @@ export default function EscrowDealDetail() {
       {paymentResult === 'canceled' && (
         <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-4 text-yellow-800 text-sm">
           Payment was cancelled. The deal is still open — you can try again below.
+        </div>
+      )}
+      {onboardingResult === 'done' && (
+        <div className="bg-green-50 border border-green-300 rounded-xl p-4 text-green-800 text-sm">
+          Seller Stripe onboarding returned successfully. Refreshing status…
+        </div>
+      )}
+      {onboardingResult === 'refresh' && (
+        <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-4 text-yellow-800 text-sm">
+          Stripe onboarding was interrupted. Continue onboarding below.
         </div>
       )}
 
@@ -276,6 +295,31 @@ export default function EscrowDealDetail() {
         </div>
       </div>
 
+      {/* Seller payout setup */}
+      <div className="bg-white rounded-xl shadow p-5">
+        <h3 className="font-semibold mb-2 flex items-center gap-2">
+          <DollarSign className="w-4 h-4 text-indigo-600" /> Seller Payout Setup
+        </h3>
+        {sellerPayoutReady ? (
+          <p className="text-sm text-green-700">
+            Seller payout account is connected and ready to receive released funds.
+          </p>
+        ) : (
+          <>
+            <p className="text-sm text-gray-500 mb-3">
+              The seller must complete Stripe onboarding before escrow funds can be released.
+            </p>
+            <button
+              onClick={handleSellerConnect}
+              disabled={actionLoading}
+              className="w-full py-3 bg-slate-800 text-white rounded-xl font-semibold hover:bg-slate-900 disabled:opacity-60"
+            >
+              {actionLoading ? 'Opening Stripe…' : 'Connect / Continue Seller Stripe Onboarding'}
+            </button>
+          </>
+        )}
+      </div>
+
       {/* Action buttons */}
       {error && (
         <div className="bg-red-50 border border-red-300 text-red-700 rounded-lg p-3 text-sm">{error}</div>
@@ -329,10 +373,14 @@ export default function EscrowDealDetail() {
           <div className="flex gap-3">
             <button
               onClick={handleRelease}
-              disabled={actionLoading}
+                disabled={actionLoading || !sellerPayoutReady}
               className="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 disabled:opacity-60"
             >
-              {actionLoading ? 'Processing…' : 'I Received It — Release Funds'}
+                {actionLoading
+                  ? 'Processing…'
+                  : sellerPayoutReady
+                    ? 'I Received It — Release Funds'
+                    : 'Seller Setup Required Before Release'}
             </button>
             <button
               onClick={() => setShowDisputeForm(true)}

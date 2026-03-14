@@ -98,6 +98,40 @@ For immediate offline/quick-cash testing with Marketplace deals, this repo now i
 4. In popup, set App Base URL to your frontend URL (`http://localhost:5173`)
 5. Visit a Marketplace/Craigslist listing and click "Secure Deal"
 
+## Stripe Escrow Hold + Release (Connect)
+
+The escrow deal flow now supports seller payout onboarding with Stripe Connect and transfer-on-release.
+
+### What this enables
+
+- Buyer pays into your platform Stripe account through Checkout.
+- Funds are marked as `paid_held` after webhook confirmation.
+- Seller connects a Stripe payout account from the escrow detail page.
+- On buyer receipt confirmation, the app creates a Stripe transfer to the seller account.
+
+### Required backend env
+
+Set these in `backend/.env`:
+
+```env
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_CONNECT_COUNTRY=US
+```
+
+### Database migration
+
+Apply `backend/migrations/002_add_stripe_connect_columns.sql` to add:
+
+- `seller_stripe_account_id`
+- `stripe_transfer_id`
+
+Then regenerate Prisma client if needed:
+
+```bash
+npx prisma generate --schema backend/prisma/schema.prisma
+```
+
 ## API Endpoints
 
 ### Contract Management

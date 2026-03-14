@@ -3,6 +3,8 @@ import express from 'express';
 import {
   createEscrowDeal,
   getEscrowDeal,
+  getSellerConnectStatus,
+  createSellerConnectOnboardingLink,
   createCheckoutSession,
   handleStripeWebhook,
   markAsShipped,
@@ -69,10 +71,24 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     const deal = await getEscrowDeal(req.params.id);
     if (!deal) return res.status(404).json({ error: 'Deal not found' });
-    return res.json(deal);
+    const sellerConnect = await getSellerConnectStatus(req.params.id);
+    return res.json({ ...deal, ...sellerConnect });
   } catch (err: unknown) {
     console.error('[escrow] get error:', err);
     return res.status(500).json({ error: 'Failed to fetch deal' });
+  }
+});
+
+// ─── POST /api/escrow/:id/seller/connect ─────────────────────────────────────
+// Create or continue Stripe Connect onboarding for the seller.
+router.post('/:id/seller/connect', async (req: Request, res: Response) => {
+  try {
+    const link = await createSellerConnectOnboardingLink(req.params.id, CONFIG.FRONTEND_URL);
+    return res.json(link);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to create seller onboarding link';
+    console.error('[escrow] seller connect error:', err);
+    return res.status(400).json({ error: msg });
   }
 });
 

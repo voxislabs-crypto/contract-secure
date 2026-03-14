@@ -9,7 +9,12 @@ export interface EscrowDeal {
   sellerEmail: string | null;
   buyerName: string | null;
   buyerEmail: string | null;
+  sellerStripeAccountId: string | null;
+  stripeTransferId: string | null;
   paymentStatus: string;
+  hasSellerStripeAccount?: boolean;
+  sellerPayoutsEnabled?: boolean;
+  sellerDetailsSubmitted?: boolean;
   trackingNumber: string | null;
   shortLink: string | null;
   deliveryDeadline: string | null;
@@ -57,6 +62,10 @@ export function createEscrowDeal(data: CreateDealInput) {
 
 export function getEscrowDeal(id: string) {
   return apiFetch<EscrowDeal>(`/api/escrow/${id}`);
+}
+
+export function createSellerConnectLink(id: string): Promise<{ onboardingUrl: string; sellerStripeAccountId: string }> {
+  return apiFetch(`/api/escrow/${id}/seller/connect`, { method: 'POST' });
 }
 
 export function startPayment(id: string): Promise<{ checkoutUrl: string }> {

@@ -3,6 +3,7 @@ import type Stripe from 'stripe';
 import { stripe, STRIPE_WEBHOOK_SECRET } from '../config/stripe.js';
 
 const prisma = new PrismaClient();
+const DEFAULT_CONNECT_COUNTRY = process.env.STRIPE_CONNECT_COUNTRY ?? 'US';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,111 @@ export async function getEscrowDeal(id: string) {
     where: { id, isEscrow: true },
     include: { signers: true, auditLogs: { orderBy: { createdAt: 'asc' } } },
   });
+}
+
+export interface SellerConnectStatus {
+  hasSellerStripeAccount: boolean;
+  sellerPayoutsEnabled: boolean;
+  sellerDetailsSubmitted: boolean;
+}
+
+export async function getSellerConnectStatus(contractId: string): Promise<SellerConnectStatus> {
+  const contract = await prisma.contract.findUnique({
+    where: { id: contractId },
+    select: { sellerStripeAccountId: true },
+  });
+
+  if (!contract) throw new Error('Contract not found');
+
+  if (!contract.sellerStripeAccountId) {
+    return {
+      hasSellerStripeAccount: false,
+      sellerPayoutsEnabled: false,
+      sellerDetailsSubmitted: false,
+    };
+  }
+
+  if (!stripe) {
+    return {
+      hasSellerStripeAccount: true,
+      sellerPayoutsEnabled: false,
+      sellerDetailsSubmitted: false,
+    };
+  }
+
+  try {
+    const account = await stripe.accounts.retrieve(contract.sellerStripeAccountId);
+    return {
+      hasSellerStripeAccount: true,
+      sellerPayoutsEnabled: !!account.payouts_enabled,
+      sellerDetailsSubmitted: !!account.details_submitted,
+    };
+  } catch {
+    return {
+      hasSellerStripeAccount: true,
+      sellerPayoutsEnabled: false,
+      sellerDetailsSubmitted: false,
+    };
+  }
+}
+
+export async function createSellerConnectOnboardingLink(contractId: string, frontendUrl: string) {
+  if (!stripe) throw new Error('Stripe is not configured. Set STRIPE_SECRET_KEY in your .env.');
+
+  const contract = await prisma.contract.findUnique({ where: { id: contractId } });
+  if (!contract || !contract.isEscrow) throw new Error('Escrow contract not found');
+
+  let sellerStripeAccountId = contract.sellerStripeAccountId;
+
+  if (!sellerStripeAccountId) {
+    const account = await stripe.accounts.create({
+      type: 'express',
+      country: DEFAULT_CONNECT_COUNTRY,
+      email: contract.sellerEmail ?? undefined,
+      capabilities: {
+        transfers: { requested: true },
+      },
+      metadata: {
+        contractId,
+        sellerEmail: contract.sellerEmail ?? '',
+      },
+    });
+
+    sellerStripeAccountId = account.id;
+
+    await prisma.contract.update({
+      where: { id: contractId },
+      data: { sellerStripeAccountId },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        contractId,
+        event: 'SELLER_STRIPE_ACCOUNT_CREATED',
+        meta: JSON.stringify({ sellerStripeAccountId }),
+      },
+    });
+  }
+
+  const accountLink = await stripe.accountLinks.create({
+    account: sellerStripeAccountId,
+    type: 'account_onboarding',
+    refresh_url: `${frontendUrl}/escrow/${contractId}?onboarding=refresh`,
+    return_url: `${frontendUrl}/escrow/${contractId}?onboarding=done`,
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      contractId,
+      event: 'SELLER_ONBOARDING_LINK_CREATED',
+      meta: JSON.stringify({ sellerStripeAccountId }),
+    },
+  });
+
+  return {
+    onboardingUrl: accountLink.url,
+    sellerStripeAccountId,
+  };
 }
 
 // ─── Create Stripe Checkout Session ──────────────────────────────────────────
@@ -221,10 +327,56 @@ export async function confirmReceipt(contractId: string) {
   if (contract.paymentStatus !== 'shipped') {
     throw new Error('Item has not been marked as shipped yet');
   }
+  if (!contract.price) throw new Error('Contract has no price set');
+  if (!contract.sellerStripeAccountId) {
+    throw new Error('Seller must connect a Stripe payout account before funds can be released');
+  }
+  if (!contract.stripePaymentIntentId) {
+    throw new Error('No Stripe payment intent found for this contract');
+  }
+  if (!stripe) throw new Error('Stripe is not configured. Set STRIPE_SECRET_KEY in your .env.');
+
+  const sellerAccount = await stripe.accounts.retrieve(contract.sellerStripeAccountId);
+  if (!sellerAccount.payouts_enabled || !sellerAccount.details_submitted) {
+    throw new Error('Seller Stripe account onboarding is incomplete');
+  }
+
+  const totalCents = Math.round(contract.price * 100);
+  const feeCents = Math.round(totalCents * ((contract.escrowFeePercent ?? 0) / 100));
+  const sellerCents = totalCents - feeCents;
+
+  if (sellerCents <= 0) {
+    throw new Error('Calculated seller payout amount must be greater than zero');
+  }
+
+  const paymentIntent = await stripe.paymentIntents.retrieve(contract.stripePaymentIntentId);
+  const chargeId =
+    typeof paymentIntent.latest_charge === 'string'
+      ? paymentIntent.latest_charge
+      : paymentIntent.latest_charge?.id ?? undefined;
+
+  const transferData: Stripe.TransferCreateParams = {
+    amount: sellerCents,
+    currency: 'usd',
+    destination: contract.sellerStripeAccountId,
+    metadata: {
+      contractId,
+      paymentIntentId: contract.stripePaymentIntentId,
+      grossAmountCents: String(totalCents),
+      feeCents: String(feeCents),
+      netAmountCents: String(sellerCents),
+    },
+  };
+
+  if (chargeId) {
+    transferData.source_transaction = chargeId;
+  }
+
+  const transfer = await stripe.transfers.create(transferData);
 
   const updated = await prisma.contract.update({
     where: { id: contractId },
-    data: { paymentStatus: 'completed' },
+    data: { paymentStatus: 'completed', stripeTransferId: transfer.id },
   });
 
   await prisma.auditLog.create({
@@ -232,8 +384,12 @@ export async function confirmReceipt(contractId: string) {
       contractId,
       event: 'RECEIPT_CONFIRMED',
       meta: JSON.stringify({
-        note: 'Funds released. Configure Stripe Connect to auto-transfer to seller.',
-        // TODO: stripe.transfers.create({ amount, currency: 'usd', destination: sellerStripeAccountId })
+        transferId: transfer.id,
+        paymentIntentId: contract.stripePaymentIntentId,
+        sourceChargeId: chargeId ?? null,
+        grossAmountCents: totalCents,
+        feeCents,
+        netAmountCents: sellerCents,
       }),
     },
   });
