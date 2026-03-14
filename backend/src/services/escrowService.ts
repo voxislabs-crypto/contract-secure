@@ -289,6 +289,45 @@ export async function handleStripeWebhook(rawBody: Buffer, signature: string) {
       }
       break;
     }
+
+    case 'charge.refunded': {
+      const charge = event.data.object as Stripe.Charge;
+      const paymentIntentId =
+        typeof charge.payment_intent === 'string'
+          ? charge.payment_intent
+          : charge.payment_intent?.id ?? null;
+
+      if (!paymentIntentId) break;
+
+      const contract = await prisma.contract.findFirst({
+        where: { stripePaymentIntentId: paymentIntentId },
+        select: { id: true, paymentStatus: true },
+      });
+
+      if (!contract) break;
+
+      // Move escrow state to refunded when Stripe reports refunded charge.
+      await prisma.contract.update({
+        where: { id: contract.id },
+        data: { paymentStatus: 'refunded' },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          contractId: contract.id,
+          event: 'PAYMENT_REFUNDED',
+          meta: JSON.stringify({
+            chargeId: charge.id,
+            paymentIntentId,
+            refunded: charge.refunded,
+            amountRefundedCents: charge.amount_refunded,
+            amountCapturedCents: charge.amount_captured,
+            previousStatus: contract.paymentStatus,
+          }),
+        },
+      });
+      break;
+    }
   }
 
   return event;

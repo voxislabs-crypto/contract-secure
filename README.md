@@ -119,6 +119,18 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_CONNECT_COUNTRY=US
 ```
 
+### Stripe webhook events to enable
+
+Create a webhook endpoint pointing to your backend:
+
+- POST /api/webhooks/stripe
+
+Enable these events:
+
+- checkout.session.completed
+- payment_intent.payment_failed
+- charge.refunded
+
 ### Database migration
 
 Apply `backend/migrations/002_add_stripe_connect_columns.sql` to add:
