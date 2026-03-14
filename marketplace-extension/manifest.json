@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Contract Secure - Marketplace Stub",
+  "version": "0.1.0",
+  "description": "Injects a Secure Deal button on marketplace listings and opens a Contract Secure intake flow.",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": [
+    "https://www.facebook.com/marketplace/*",
+    "https://*.craigslist.org/*"
+  ],
+  "action": {
+    "default_title": "Contract Secure",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.facebook.com/marketplace/*",
+        "https://*.craigslist.org/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

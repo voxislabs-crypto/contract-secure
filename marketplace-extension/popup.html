@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contract Secure</title>
+    <style>
+      :root {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: #0f172a;
+      }
+
+      body {
+        margin: 0;
+        padding: 12px;
+        width: 320px;
+        background: #f8fafc;
+      }
+
+      .card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+
+      p {
+        margin: 0 0 10px;
+        font-size: 12px;
+        color: #475569;
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 8px;
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+
+      button {
+        border: none;
+        border-radius: 8px;
+        padding: 9px 10px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .primary {
+        flex: 1;
+        background: #2563eb;
+        color: #ffffff;
+      }
+
+      .secondary {
+        background: #e2e8f0;
+        color: #0f172a;
+      }
+
+      .status {
+        margin-top: 8px;
+        font-size: 11px;
+        color: #334155;
+        min-height: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Secure Deal</h1>
+      <p>Open your intake flow with listing metadata from the current tab.</p>
+
+      <label for="appBaseUrl">App Base URL</label>
+      <input id="appBaseUrl" type="url" placeholder="https://your-app-url.com" />
+
+      <div class="row">
+        <button class="secondary" id="saveBtn" type="button">Save</button>
+        <button class="primary" id="openBtn" type="button">Open Secure Deal</button>
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+  </html>

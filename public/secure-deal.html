@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contract Secure - $5 Secure Deal Intake</title>
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --ink: #0f172a;
+        --muted: #475569;
+        --line: #dbe4f0;
+        --brand: #0c4a6e;
+        --brand-soft: #e0f2fe;
+        --ok: #166534;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top right, #e0f2fe, var(--bg) 40%);
+        color: var(--ink);
+      }
+
+      .page {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 24px 16px 48px;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, #082f49, #0c4a6e);
+        color: #ffffff;
+        border-radius: 20px;
+        padding: 22px;
+        box-shadow: 0 18px 48px rgba(12, 74, 110, 0.25);
+        margin-bottom: 18px;
+      }
+
+      .hero h1 {
+        margin: 0 0 8px;
+        font-size: clamp(1.4rem, 2vw, 2rem);
+      }
+
+      .hero p {
+        margin: 0;
+        color: #cde8f7;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 16px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 16px;
+      }
+
+      h2 {
+        margin: 0 0 12px;
+        font-size: 1.05rem;
+      }
+
+      label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 10px;
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 88px;
+        resize: vertical;
+      }
+
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .btn {
+        border: none;
+        border-radius: 10px;
+        padding: 11px 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        background: var(--brand);
+        color: #ffffff;
+      }
+
+      .btn-muted {
+        background: #e2e8f0;
+        color: #0f172a;
+      }
+
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .payment-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 10px;
+      }
+
+      .pay-card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px;
+      }
+
+      .pay-card h3 {
+        margin: 0 0 6px;
+        font-size: 0.96rem;
+      }
+
+      .pay-card img {
+        width: 100%;
+        max-width: 170px;
+        display: block;
+        margin: 8px auto;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+      }
+
+      .pay-link {
+        display: inline-block;
+        text-decoration: none;
+        background: #0f172a;
+        color: #ffffff;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+
+      .note {
+        background: var(--brand-soft);
+        border: 1px solid #bae6fd;
+        color: #0c4a6e;
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 0.86rem;
+      }
+
+      .success {
+        border: 1px solid #86efac;
+        background: #f0fdf4;
+        color: var(--ok);
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 0.86rem;
+        display: none;
+      }
+
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      .small {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .two {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <h1>Secure your Marketplace deal for $5</h1>
+        <p>
+          Pay once, share your deal details, and receive a custom contract PDF for signatures.
+          Built for quick anti-scam protection on Facebook Marketplace and Craigslist.
+        </p>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <h2>1) Deal Intake Form</h2>
+          <form id="dealForm">
+            <div class="two">
+              <div>
+                <label for="buyerName">Your Name</label>
+                <input id="buyerName" name="buyerName" required />
+              </div>
+              <div>
+                <label for="email">Email for PDF Delivery</label>
+                <input id="email" name="email" type="email" required />
+              </div>
+            </div>
+
+            <div class="two">
+              <div>
+                <label for="counterparty">Other Party Name</label>
+                <input id="counterparty" name="counterparty" />
+              </div>
+              <div>
+                <label for="dealType">Deal Type</label>
+                <select id="dealType" name="dealType">
+                  <option>Marketplace Item</option>
+                  <option>Freelance Work</option>
+                  <option>Rent / Room</option>
+                  <option>Loan Agreement</option>
+                  <option>Other</option>
+                </select>
+              </div>
+            </div>
+
+            <label for="title">Deal Title</label>
+            <input id="title" name="title" required placeholder="iPhone 14 Pro 256GB - local pickup" />
+
+            <div class="two">
+              <div>
+                <label for="amount">Deal Amount (USD)</label>
+                <input id="amount" name="amount" type="number" step="0.01" min="0" placeholder="450" />
+              </div>
+              <div>
+                <label for="deadline">Deadline / Meetup Date</label>
+                <input id="deadline" name="deadline" type="date" />
+              </div>
+            </div>
+
+            <label for="listingUrl">Listing URL</label>
+            <input id="listingUrl" name="listingUrl" type="url" placeholder="https://..." />
+
+            <label for="terms">Key Terms</label>
+            <textarea
+              id="terms"
+              name="terms"
+              placeholder="Deposit amount, delivery conditions, return/refund terms, penalties, who pays fees..."
+            ></textarea>
+
+            <button class="btn btn-primary" type="submit">Generate Request Summary</button>
+          </form>
+
+          <div id="success" class="success" aria-live="polite"></div>
+
+          <div class="stack" style="margin-top: 12px">
+            <button id="copyBtn" class="btn btn-muted" type="button">Copy Request Details</button>
+            <a
+              id="emailBtn"
+              class="btn btn-muted"
+              href="#"
+              style="display: inline-flex; justify-content: center; text-decoration: none"
+            >
+              Email Request
+            </a>
+          </div>
+
+          <p class="small" style="margin-top: 10px">
+            Tip: After payment, include your payment screenshot in the email reply so processing is faster.
+          </p>
+        </article>
+
+        <article class="card">
+          <h2>2) Pay the $5 Contract Setup Fee</h2>
+          <p class="note">
+            Update payment handles in this file before production. Search for <span class="mono">PAYMENT_CONFIG</span>.
+          </p>
+
+          <div id="paymentCards" class="payment-grid"></div>
+
+          <h2 style="margin-top: 14px">3) What happens next</h2>
+          <ol class="small" style="padding-left: 18px; margin: 0">
+            <li>We review your details and draft your contract terms.</li>
+            <li>You receive a PDF by email for review/signing.</li>
+            <li>Final version is sent with audit-ready details.</li>
+          </ol>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const FEE_USD = 5;
+      const PAYMENT_CONFIG = {
+        venmoHandle: "your-venmo-handle",
+        paypalMe: "yourpaypalme",
+        cashTag: "yourcashtag",
+        intakeEmail: "support@contractsecure.app"
+      };
+
+      const form = document.getElementById("dealForm");
+      const paymentCards = document.getElementById("paymentCards");
+      const copyBtn = document.getElementById("copyBtn");
+      const emailBtn = document.getElementById("emailBtn");
+      const success = document.getElementById("success");
+
+      let summaryText = "";
+
+      function getFormData() {
+        const values = new FormData(form);
+        return Object.fromEntries(values.entries());
+      }
+
+      function buildPaymentLinks(note) {
+        const safeNote = encodeURIComponent(note);
+        const venmoUrl = `https://venmo.com/u/${PAYMENT_CONFIG.venmoHandle}?txn=pay&amount=${FEE_USD}&note=${safeNote}`;
+        const paypalUrl = `https://www.paypal.com/paypalme/${PAYMENT_CONFIG.paypalMe}/${FEE_USD}`;
+        const cashAppUrl = `https://cash.app/$${PAYMENT_CONFIG.cashTag}/${FEE_USD}`;
+
+        return [
+          { name: "Venmo", url: venmoUrl },
+          { name: "PayPal", url: paypalUrl },
+          { name: "Cash App", url: cashAppUrl }
+        ];
+      }
+
+      function qrUrl(text) {
+        return `https://quickchart.io/qr?size=220&margin=2&text=${encodeURIComponent(text)}`;
+      }
+
+      function renderPaymentCards() {
+        const data = getFormData();
+        const shortTitle = (data.title || "Deal").toString().slice(0, 48);
+        const note = `ContractSecure $5 setup fee - ${shortTitle}`;
+
+        const cards = buildPaymentLinks(note)
+          .map(
+            (item) => `
+            <div class="pay-card">
+              <h3>${item.name}</h3>
+              <div class="small">Fee: $${FEE_USD.toFixed(2)}</div>
+              <img src="${qrUrl(item.url)}" alt="${item.name} QR code" loading="lazy" />
+              <a class="pay-link" href="${item.url}" target="_blank" rel="noopener noreferrer">Open ${item.name}</a>
+            </div>
+          `
+          )
+          .join("");
+
+        paymentCards.innerHTML = cards;
+      }
+
+      function buildSummary(data) {
+        return [
+          "Contract Secure - Manual Request",
+          `Name: ${data.buyerName || ""}`,
+          `Email: ${data.email || ""}`,
+          `Other Party: ${data.counterparty || ""}`,
+          `Deal Type: ${data.dealType || ""}`,
+          `Title: ${data.title || ""}`,
+          `Deal Amount: ${data.amount ? `$${data.amount}` : ""}`,
+          `Deadline/Meetup: ${data.deadline || ""}`,
+          `Listing URL: ${data.listingUrl || ""}`,
+          "",
+          "Key Terms:",
+          (data.terms || "").toString().trim() || "(none provided)",
+          "",
+          `Payment Fee: $${FEE_USD.toFixed(2)} (screenshot attached in reply)`,
+          `Source: ${new URLSearchParams(window.location.search).get("source") || "direct"}`
+        ].join("\n");
+      }
+
+      function updateEmailLink() {
+        const data = getFormData();
+        const subject = encodeURIComponent(`Contract Secure Request - ${data.title || "New Deal"}`);
+        const body = encodeURIComponent(summaryText || buildSummary(data));
+        emailBtn.href = `mailto:${PAYMENT_CONFIG.intakeEmail}?subject=${subject}&body=${body}`;
+      }
+
+      form.addEventListener("input", () => {
+        renderPaymentCards();
+        updateEmailLink();
+      });
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const data = getFormData();
+        summaryText = buildSummary(data);
+        updateEmailLink();
+        success.style.display = "block";
+        success.textContent = "Request summary generated. Copy it or send via email after payment.";
+      });
+
+      copyBtn.addEventListener("click", async () => {
+        const data = getFormData();
+        if (!summaryText) summaryText = buildSummary(data);
+        try {
+          await navigator.clipboard.writeText(summaryText);
+          success.style.display = "block";
+          success.textContent = "Copied request details to clipboard.";
+        } catch {
+          success.style.display = "block";
+          success.textContent = "Clipboard access failed. Select and copy from your email draft instead.";
+        }
+      });
+
+      function preloadFromQuery() {
+        const params = new URLSearchParams(window.location.search);
+        const listingUrl = params.get("listingUrl");
+        const listingTitle = params.get("listingTitle");
+        if (listingUrl) document.getElementById("listingUrl").value = listingUrl;
+        if (listingTitle) document.getElementById("title").value = listingTitle;
+      }
+
+      preloadFromQuery();
+      renderPaymentCards();
+      updateEmailLink();
+    </script>
+  </body>
+  </html>

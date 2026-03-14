@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contract Secure Extension Options</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 24px;
+        color: #0f172a;
+        background: #f8fafc;
+      }
+
+      .panel {
+        max-width: 640px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 12px;
+      }
+
+      button {
+        border: none;
+        border-radius: 8px;
+        background: #2563eb;
+        color: #ffffff;
+        padding: 10px 14px;
+        cursor: pointer;
+      }
+
+      #status {
+        margin-top: 10px;
+        color: #334155;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <h1>Contract Secure Extension Settings</h1>
+      <p>Set the app URL where secure-deal intake requests should open.</p>
+
+      <label for="appBaseUrl">App Base URL</label>
+      <input id="appBaseUrl" type="url" placeholder="https://your-app-url.com" />
+
+      <button id="saveBtn" type="button">Save Settings</button>
+      <div id="status"></div>
+    </div>
+
+    <script src="options.js"></script>
+  </body>
+  </html>
